@@ -1,4 +1,5 @@
 import os
+import secrets
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException
@@ -11,8 +12,17 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 # Публичный роутер: /api/stats — те же счётчики для страницы About (без ключа)
 public_router = APIRouter(prefix="/api/stats", tags=["admin"])
 
-# Ключ для доступа к админ-панели; задаётся через переменную окружения ADMIN_KEY
-ADMIN_KEY: str = os.getenv("ADMIN_KEY", "admin123")
+# Ключ для доступа к админ-панели; задаётся через переменную окружения ADMIN_KEY.
+# Если ключ не задан, админ-эндпоинты отключены (503), а не открыты дефолтным паролем.
+ADMIN_KEY: str = os.getenv("ADMIN_KEY") or ""
+
+
+def _check_admin_key(x_admin_key: str | None) -> None:
+    """Проверяет X-Admin-Key. Без настроенного ADMIN_KEY доступ закрыт полностью."""
+    if not ADMIN_KEY:
+        raise HTTPException(status_code=503, detail="ADMIN_KEY is not configured")
+    if not x_admin_key or not secrets.compare_digest(x_admin_key, ADMIN_KEY):
+        raise HTTPException(status_code=403, detail="Invalid admin key")
 
 
 async def _collect_stats() -> dict[str, Any]:
@@ -86,18 +96,16 @@ async def get_public_stats() -> dict[str, Any]:
 
 
 @router.get("/stats")
-async def get_admin_stats(x_admin_key: str = Header(...)) -> dict[str, Any]:
+async def get_admin_stats(x_admin_key: str | None = Header(None)) -> dict[str, Any]:
     """Статистика для админ-панели. Требует заголовок X-Admin-Key."""
-    if x_admin_key != ADMIN_KEY:
-        raise HTTPException(status_code=403, detail="Invalid admin key")
+    _check_admin_key(x_admin_key)
     return await _collect_stats()
 
 
 @router.post("/clear")
-async def clear_database(x_admin_key: str = Header(...)) -> dict[str, Any]:
+async def clear_database(x_admin_key: str | None = Header(None)) -> dict[str, Any]:
     """Очищает коллекцию trend_events. Требует заголовок X-Admin-Key."""
-    if x_admin_key != ADMIN_KEY:
-        raise HTTPException(status_code=403, detail="Invalid admin key")
+    _check_admin_key(x_admin_key)
 
     result = await trend_events.delete_many({})
     print(f"🗑️  База trend_events очищена, удалено записей: {result.deleted_count}")

@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -13,7 +14,10 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
-JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-key-change-in-production")
+# JWT_SECRET обязателен: без него подписывать токены публичной строкой из репозитория нельзя.
+# Если переменная не задана, генерируем случайный ключ на время работы процесса —
+# токены после перезапуска станут недействительны, зато подделать их снаружи невозможно.
+JWT_SECRET = os.getenv("JWT_SECRET") or secrets.token_hex(32)
 JWT_ALGORITHM = "HS256"
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")

@@ -96,7 +96,7 @@ docker compose exec ollama ollama pull qwen2.5:0.5b
 | `DATABASE_NAME` | `backend/database.py` | `trendradar` |
 | `GITHUB_CLIENT_ID` | `backend/routers/auth.py` | — |
 | `GITHUB_CLIENT_SECRET` | `backend/routers/auth.py` | — |
-| `JWT_SECRET` | `backend/routers/auth.py` | `super-secret-key-change-in-production` |
+| `JWT_SECRET` | `backend/routers/auth.py` | — (обязателен; без него генерируется случайный ключ на запуск) |
 | `FRONTEND_URL` | `backend/routers/auth.py` | `http://localhost:5173` |
 | `BACKEND_URL` | `backend/routers/auth.py` | `http://localhost:8000` |
 | `HN_API_URL` | `collector/hn_collector.py` | `https://hacker-news.firebaseio.com/v0` |
@@ -104,7 +104,7 @@ docker compose exec ollama ollama pull qwen2.5:0.5b
 | `DEVTO_DAYS` / `DEVTO_PER_PAGE` | `collector/devto_collector.py` | `7` / `50` |
 | `OLLAMA_URL` | `backend/routers/trends.py`, `collector/ai_agent.py` | `http://localhost:11434` |
 | `OLLAMA_MODEL` | `backend/routers/trends.py`, `collector/ai_agent.py` | `qwen2.5:0.5b` |
-| `ADMIN_KEY` | `backend/routers/admin.py` | `admin123` |
+| `ADMIN_KEY` | `backend/routers/admin.py` | — (обязателен; без него `/api/admin/*` отвечает 503) |
 
 > **Важно:** и `backend/.env.example`, и `collector/.env.example` используют те же имена переменных, что и код (`MONGODB_URL`, `DATABASE_NAME`). При отсутствии значений используются дефолты `localhost:27017` и `trendradar`. `USE_LLM` — не переменная окружения, а константа в `collector/ai_agent.py`.
 
