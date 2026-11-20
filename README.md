@@ -110,6 +110,21 @@ docker compose exec ollama ollama pull qwen2.5:0.5b
 
 Для GitHub OAuth создайте OAuth App: Homepage URL `http://localhost:5173`, callback `http://localhost:8000/api/auth/github/callback`.
 
+## 🛡️ Безопасность
+
+- **Секреты живут только в `backend/.env`** — файл исключён из git (`.gitignore`) и из образа (`.dockerignore`); в репозитории лежит лишь шаблон `backend/.env.example` без значений.
+- **Обязательные переменные:** `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `JWT_SECRET`, `ADMIN_KEY`. Без `JWT_SECRET` токены подписываются случайным ключом на время запуска (после рестарта все сессии сбрасываются), без `ADMIN_KEY` все `/api/admin/*` отвечают `503`.
+- **Генерация ключей:**
+
+  ```powershell
+  python -c "import secrets; print(secrets.token_hex(32))"     # JWT_SECRET
+  python -c "import secrets; print(secrets.token_urlsafe(24))" # ADMIN_KEY
+  ```
+
+- **Админ-доступ** — заголовок `X-Admin-Key`, сравнение через `secrets.compare_digest`. Дефолтный `admin123` из ранних версий больше не принимается.
+- **Ротация при утечке:** перегенерируйте `GITHUB_CLIENT_SECRET` (GitHub → Settings → Developer settings → OAuth Apps) и `JWT_SECRET`, обновите `backend/.env`, затем `docker compose up -d --force-recreate backend`.
+- **Mongo без аутентификации**, а порт `27017` опубликован на все интерфейсы — не выставляйте машину в интернет; для локальной работы можно сузить проброс до `127.0.0.1:27017:27017`.
+
 ## 📡 API
 
 | Метод | Endpoint | Назначение |
