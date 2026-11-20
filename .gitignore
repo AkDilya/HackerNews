@@ -1,0 +1,22 @@
+# Секреты: реальные .env не коммитим, примеры — оставляем
+.env
+.env.*
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node / сборка фронтенда
+node_modules/
+dist/
+npm-debug.log*
+
+# Веса моделей Ollama
+*.gguf
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db

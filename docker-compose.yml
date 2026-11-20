@@ -1,0 +1,61 @@
+# TrendRadar — полный стек одной командой: docker compose up --build
+# Mongo + FastAPI + Ollama + collector + frontend (nginx)
+services:
+  mongo:
+    image: mongo:7
+    container_name: trendradar-mongo
+    volumes:
+      - trendradar_data:/data/db
+    ports:
+      - "27017:27017"   # наружу — для локальных инструментов (Compass, check_db.py)
+
+  backend:
+    build: ./backend
+    container_name: trendradar-backend
+    env_file:
+      # GitHub OAuth секреты и JWT_SECRET берутся из backend/.env (в образ не запекается)
+      - ./backend/.env
+    ports:
+      - "8000:8000"     # API_BASE_URL фронтенда — http://localhost:8000
+    environment:
+      # environment приоритетнее env_file — в контейнере Mongo зовут по имени сервиса
+      MONGODB_URL: mongodb://mongo:27017
+      DATABASE_NAME: trendradar
+      OLLAMA_URL: http://ollama:11434   # внутри сети Docker сервис зовётся по имени
+      FRONTEND_URL: http://localhost:5173
+      BACKEND_URL: http://localhost:8000
+    depends_on:
+      - mongo
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: trendradar-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    # После первого запуска: docker compose exec ollama ollama pull qwen2.5:0.5b
+
+  collector:
+    build:
+      context: .
+      dockerfile: collector/Dockerfile
+    container_name: trendradar-collector
+    environment:
+      MONGODB_URL: mongodb://mongo:27017
+      DATABASE_NAME: trendradar
+      OLLAMA_URL: http://ollama:11434/api/generate
+    depends_on:
+      - mongo
+      - ollama
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: trendradar-frontend
+    ports:
+      - "5173:80"       # CORS бэкенда разрешает именно http://localhost:5173
+    depends_on:
+      - backend
+
+volumes:
+  trendradar_data:
+  ollama_data:

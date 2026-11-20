@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+check_db*.py
+clean_db.py

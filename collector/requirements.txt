@@ -1,0 +1,5 @@
+httpx
+apscheduler
+python-dotenv
+motor
+pymongo
